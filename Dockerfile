@@ -12,7 +12,7 @@ RUN yum install -y unzip
 ADD https://freewebsitetemplates.com/download/frozenyogurtshop.zip /var/www/html/
 WORKDIR /var/www/html/
 RUN sh -c 'unzip -q "*.zip"'
-RUN cp -rvf photogenic/* .
-RUN rm -rf photogenic photogenic.zip
+RUN cp -rvf frozenyogurtshop/* .
+RUN rm -rf frozenyogurtshop frozenyogurtshop.zip
 CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
 EXPOSE 80
