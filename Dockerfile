@@ -17,7 +17,7 @@ RUN sh -c 'unzip -q "*.zip"'
 RUN cp -rvf frozenyogurtshop/* .
 RUN rm -rf frozenyogurtshop frozenyogurtshop.zip
 CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
-EXPOSE 80
+EXPOSE 80 22
 
 
 # FROM centos
@@ -36,4 +36,4 @@ EXPOSE 80
 # RUN cp -rvf originarchitectswebsitetemplate/* .
 # RUN rm -rf originarchitectswebsitetemplate originarchitectswebsitetemplate.zip
 # CMD ["/usr/sbin/httpd", "-D", "FOREGROUND"]
-# EXPOSE 80
+# EXPOSE 80 22
