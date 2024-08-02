@@ -1,0 +1,53 @@
+node {
+    stage('git checkout'){
+        git 'https://github.com/ImmortalRkr/Kubernetes_Project.git'
+    }
+    
+    stage('sending Dockerfile to ansible server over ssh'){
+        sshagent(['ansible_demo']) {
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103'
+            sh 'scp /var/lib/jenkins/workspace/pipeline-demo/* ubuntu@172.31.38.103:/home/ubuntu'
+        }
+    }
+    
+    stage('Docker build image'){
+        sshagent(['ansible_demo']) {
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 cd /home/ubuntu'
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo docker image build -t $JOB_NAME:v1.$BUILD_ID .'
+        }
+    }
+    
+    stage('Docker image tagging'){
+        sshagent(['ansible_demo']) {
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 cd /home/ubuntu'
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo docker image tag $JOB_NAME:v1.$BUILD_ID immortalrkr/$JOB_NAME:v1.$BUILD_ID'
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo docker image tag $JOB_NAME:v1.$BUILD_ID immortalrkr/$JOB_NAME:latest'
+        }
+    }
+    
+    stage('Push docker image to DockerHub'){
+        sshagent(['ansible_demo']) {
+            withCredentials([string(credentialsId: 'dockerhub_passwd', variable: 'dockerhub_passwd')]) {
+                sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo docker login -u immortalrkr -p ${dockerhub_passwd}'
+                sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo docker image push immortalrkr/$JOB_NAME:v1.$BUILD_ID'
+                sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo docker image push immortalrkr/$JOB_NAME:latest'
+            
+                //sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo docker image rm immortalrkr/$JOB_NAME:v1.$BUILD_ID immortalrkr/$JOB_NAME:latest $JOB_NAME:v1.$BUILD_ID'
+            }
+        }
+    }
+    
+    stage('Copy files from Ansible to the kubernetes server'){
+        sshagent(['kubernetes_server']) {
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.45.15'
+            sh 'scp /var/lib/jenkins/workspace/pipeline-demo/* ubuntu@172.31.45.15:/home/ubuntu'
+        }
+    }
+    
+    stage('Kubernetes Deployment using ansible'){
+        sshagent(['ansible_demo']) {
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 cd /home/ubuntu'
+            sh 'ssh -o StrictHostKeyChecking=no ubuntu@172.31.38.103 sudo ansible-playbook ansible.yml'
+        }
+    }
+}
